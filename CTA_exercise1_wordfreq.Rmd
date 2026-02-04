@@ -1,7 +1,7 @@
 ---
 title: "CTA_exercise1_wordfreq"
-author: "Marion Lieutaud & class"
-date: "28/01/2026"
+author: "Yan Ge"
+date: "03/02/2026"
 output: html_document
 ---
 
@@ -54,6 +54,7 @@ The `read_csv()` function takes the .csv file and loads it into the working envi
 ```{r}
 edbfdata <- read_csv("data/wordfreq/edbookfestall.csv")
 ```
+
 
 If you're working on this document from your own computer ("locally"), without cloning the Github repo, you can directly download the Edinburgh Fringe data in the following way:
 ```{r, eval = F}
@@ -458,7 +459,28 @@ ggplot(edbf_counts_both, aes(year, sum_wom / year_total, group=genre, color=genr
 2. Choose another set of terms by which to filter (e.g., race-related words) and plot their frequency over time.
 
 ```{r}
-# show me
+# dressing style and visual aesthetics
+my_evdes <- edbfdata %>%  select(description, year)
+head(my_evdes)
+my_evtsperyr <- my_evdes %>% mutate(obs=1) %>% group_by(year) %>% summarise(sum_events = sum(obs))
+my_tidy_des <- my_evdes %>% mutate(desc = tolower(description)) %>% unnest_tokens(word, desc) %>% filter(str_detect(word, "[a-z]"))
+my_tidy_des <- my_tidy_des %>% filter(!word %in% stop_words$word)
+my_tidy_des %>% count(word,  sort = TRUE)
+remove_reg <- c("&amp;","&lt;","&gt;","<p>", "</p>","&rsquo", "&lsquo;",  "&#39;", "<strong>", "</strong>", "rsquo", "em", "ndash", "nbsp", "lsquo", "strong")
+my_tidy_des <- my_tidy_des %>% filter(!word %in% remove_reg)
+my_tidy_des %>% count(word,  sort = TRUE)
+my_term_counts <- my_tidy_des %>% group_by(year) %>% count(word, sort = TRUE)
+my_term_counts$style <- as.integer(grepl("cleanfit|minimalist|minimalism|sleek|vintage|retro|aesthetic|vibe|chic|outfit|stylish|fashion", x = my_term_counts$word))
+my_counts <- my_term_counts %>% group_by(year) %>% mutate(year_total =sum(n)) %>% filter(style==1) %>% summarise(sum_sty =sum(n), year_total = min(year_total))
+head(my_counts)
+
+ggplot(my_counts, aes(year, sum_sty / year_total, group=1)) +
+  geom_line() +
+  xlab("Year") +
+  ylab("% style-related words") +
+  scale_y_continuous(labels = scales::percent_format(),
+                     expand = c(0, 0), limits = c(0, NA)) +
+  theme_tufte(base_family = "Helvetica") 
 ```
 
 
